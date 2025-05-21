@@ -32,4 +32,3 @@ Uma aplicação de lista de tarefas simples e moderna desenvolvida com **Kotlin*
 - [Jetpack Compose](https://developer.android.com/jetpack/compose)
 - [Android Jetpack (ViewModel, LiveData, etc.)](https://developer.android.com/jetpack)
 - [Material Design 3](https://m3.material.io/)
-
