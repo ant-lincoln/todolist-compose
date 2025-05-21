@@ -103,7 +103,7 @@ fun ListContent(
                         onEvent(
                             ListEvent.OnCompleteChange(
                                 todo.id,
-                                isCompleted = it
+                                isCompleted = it,
                             )
                         )
                     },
