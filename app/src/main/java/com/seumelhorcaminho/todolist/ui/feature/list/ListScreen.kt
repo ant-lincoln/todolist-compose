@@ -1,14 +1,16 @@
 package com.seumelhorcaminho.todolist.ui.feature.list
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.DrawerValue
@@ -20,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -35,26 +38,23 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.seumelhorcaminho.todolist.R
+import com.seumelhorcaminho.todolist.data.CategoryRepositoryImpl
 import com.seumelhorcaminho.todolist.data.TodoDatabaseProvider
 import com.seumelhorcaminho.todolist.data.TodoRepositoryImpl
 import com.seumelhorcaminho.todolist.domain.Todo
-import com.seumelhorcaminho.todolist.domain.todo1
-import com.seumelhorcaminho.todolist.domain.todo2
 import com.seumelhorcaminho.todolist.navigation.AddEditRoute
 import com.seumelhorcaminho.todolist.ui.UiEvent
 import com.seumelhorcaminho.todolist.ui.components.AddCategorySheetContent
 import com.seumelhorcaminho.todolist.ui.components.AppDrawerContent
 import com.seumelhorcaminho.todolist.ui.components.TodoItem
-import com.seumelhorcaminho.todolist.ui.theme.TodoListTheme
 import kotlinx.coroutines.launch
 
 @Composable
@@ -63,54 +63,54 @@ fun ListScreen(
 ) {
     val context = LocalContext.current.applicationContext
     val database = TodoDatabaseProvider.provide(context)
-    val repository = TodoRepositoryImpl(
-        dao = database.todoDao
+    val todoRepository = TodoRepositoryImpl(dao = database.todoDao)
+    val categoryRepository = CategoryRepositoryImpl(dao = database.categoryDao)
+
+    val viewModel = viewModel<ListViewModel>(
+        factory = object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return ListViewModel(
+                    todoRepository = todoRepository,
+                    categoryRepository = categoryRepository
+                ) as T
+            }
+        }
     )
 
-    val viewModel = viewModel<ListViewModel>() {
-        ListViewModel(repository = repository)
-    }
-
-    val todos by viewModel.todos.collectAsState()
+    val groupedTodos by viewModel.groupedTodos.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when (event) {
                 is UiEvent.Navigate<*> -> {
                     when (event.route) {
-                        is AddEditRoute -> {
-                            navigateToAddEditScreen(event.route.id)
-                        }
+                        is AddEditRoute -> navigateToAddEditScreen(event.route.id)
                     }
                 }
 
-                UiEvent.PopBack -> {
-                }
-
-                is UiEvent.ShowSnackbar -> {
-                }
+                else -> {}
             }
         }
     }
 
     ListContent(
-        todos = todos,
+        groupedTodos = groupedTodos,
         onEvent = viewModel::onEvent
     )
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodoTopBar(
-    onMenuClick: () -> Unit = {},
-    onCalendarClick: () -> Unit = {},
+    onMenuClick: () -> Unit,
+    onCalendarClick: () -> Unit,
 ) {
     TopAppBar(
         title = {
             Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Tiks",
+                    text = "Tasks",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.align(Alignment.Center),
                     fontWeight = FontWeight.Bold,
@@ -119,51 +119,37 @@ fun TodoTopBar(
         },
         navigationIcon = {
             IconButton(onClick = onMenuClick) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_menu),
-                    contentDescription = "Menu"
-                )
+                Icon(painter = painterResource(id = R.drawable.ic_menu), "Menu")
             }
         },
         actions = {
             IconButton(onClick = onCalendarClick) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_calendar),
-                    contentDescription = "Calendário"
-                )
+                Icon(painter = painterResource(id = R.drawable.ic_calendar), "Calendário")
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
-            colorResource(id = R.color.grey_50)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     )
 }
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ListContent(
-    todos: List<Todo>,
+    groupedTodos: Map<String, List<Todo>>,
     onEvent: (ListEvent) -> Unit,
 ) {
-
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-
     var showBottomSheet by remember { mutableStateOf(false) }
-//    val sheetState = rememberModalBottomSheetState()
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
-    )
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             AppDrawerContent(
-                onItemSelected = { selectedItem ->
-                    println("Item selecionado: $selectedItem")
-                    //TODO: LOGICA DE NAVEGACAO OU FILTRO
-                },
+                onItemSelected = { /* TODO: Lógica de filtro/navegação */ },
                 onCloseDrawer = { scope.launch { drawerState.close() } },
                 onAddCategoryClick = {
                     showBottomSheet = true
@@ -172,102 +158,89 @@ fun ListContent(
             )
         }
     ) {
-
         Scaffold(
             topBar = {
                 TodoTopBar(
-                    onMenuClick = {
-                        scope.launch { drawerState.open() }
-                    },
-                    onCalendarClick = {
-                        // Handle calendar click
-                    }
+                    onMenuClick = { scope.launch { drawerState.open() } },
+                    onCalendarClick = { /* TODO */ }
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = {
-                    onEvent(
-                        ListEvent.OnItemClick(null)
-                    )
-                }) {
-                    Icon(Icons.Default.Add, contentDescription = "Add")
+                FloatingActionButton(
+                    onClick = { onEvent(ListEvent.OnItemClick(null)) },
+                    shape = CircleShape
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Adicionar Tarefa")
                 }
             }
         ) { paddingValues ->
             LazyColumn(
-                modifier = Modifier
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
+                modifier = Modifier.padding(paddingValues),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(todos) { index, todo ->
-                    TodoItem(
-                        todo = todo,
-                        onCompleteChange = {
-                            onEvent(
-                                ListEvent.OnCompleteChange(
-                                    todo.id,
-                                    isCompleted = it,
-                                )
+                if (groupedTodos.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Nenhuma tarefa ainda.",
+                                style = MaterialTheme.typography.bodyLarge
                             )
-                        },
-                        onItemClick = {
-                            onEvent(
-                                ListEvent.OnItemClick(
-                                    todo.id
+                        }
+                    }
+                } else {
+                    groupedTodos.forEach { (header, todosInGroup) ->
+                        stickyHeader {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.surface
+                            ) {
+                                Text(
+                                    text = header,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(vertical = 8.dp)
                                 )
+                            }
+                        }
+                        items(todosInGroup, key = { it.id }) { todo ->
+                            TodoItem(
+                                todo = todo,
+                                onCompleteChange = { isCompleted ->
+                                    onEvent(ListEvent.OnCompleteChange(todo, isCompleted))
+                                },
+                                onItemClick = {
+                                    onEvent(ListEvent.OnItemClick(todo.id))
+                                },
+                                onDeleteClick = {
+                                    onEvent(ListEvent.OnDeleteClick(todo))
+                                }
                             )
-                        },
-                        onDeleteClick = {
-                            onEvent(
-                                ListEvent.OnDeleteClick(
-                                    todo.id
-                                )
-                            )
-                        },
-                    )
-
-                    if (index < todos.lastIndex) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        }
                     }
                 }
             }
-
-            if (showBottomSheet) {
-                ModalBottomSheet(
-                    onDismissRequest = {
-                        showBottomSheet = false
-                    },
-                    sheetState = sheetState
-                ) {
-                    AddCategorySheetContent(
-                        onSaveClick = { name, emoji ->
-                            println("Salvar Categoria: Nome=$name, Emoji=$emoji")
-
-                            scope.launch { sheetState.hide() }.invokeOnCompletion {
-                                if (!sheetState.isVisible) {
-                                    showBottomSheet = false
-                                }
-                            }
-                        },
-                        onEmojiClick = {
-                            println("Adicionar Emoji")
-                        }
-                    )
-                }
-            }
-
         }
     }
-}
 
-@Preview
-@Composable
-private fun ListContentPreview() {
-    TodoListTheme {
-        ListContent(
-            todos = listOf(todo1, todo2),
-            onEvent = {},
-        )
-
+    if (showBottomSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showBottomSheet = false },
+            sheetState = sheetState
+        ) {
+            AddCategorySheetContent(
+                onSaveClick = { name, emoji ->
+                    onEvent(ListEvent.OnAddCategory(name, emoji))
+                    scope.launch {
+                        sheetState.hide()
+                        showBottomSheet = false
+                    }
+                },
+                onEmojiClick = { /* TODO */ }
+            )
+        }
     }
 }

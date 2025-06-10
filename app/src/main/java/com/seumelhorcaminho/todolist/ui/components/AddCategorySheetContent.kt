@@ -62,8 +62,10 @@ fun AddCategorySheetContent(
                 border = BorderStroke(1.dp, Color.DarkGray),
                 enabled = categoryName.isNotBlank()
             ) {
-                Text(text = "Salvar categoria",
-                    color = Color.DarkGray)
+                Text(
+                    text = "Salvar categoria",
+                    color = Color.DarkGray
+                )
 
             }
         }
@@ -74,7 +76,7 @@ fun AddCategorySheetContent(
 @Preview
 @Composable
 private fun AddCategorySheetContentPreview() {
-    TodoListTheme (darkTheme = true){
+    TodoListTheme(darkTheme = true) {
         AddCategorySheetContent(
             onSaveClick = { _, _ -> },
             onEmojiClick = {}

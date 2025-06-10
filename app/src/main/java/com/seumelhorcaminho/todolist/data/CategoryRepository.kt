@@ -6,12 +6,12 @@ import kotlinx.coroutines.flow.Flow
 interface CategoryRepository {
 
     /**
-     * Retorna um Flow com a lista de todas as categorias.
+     * Returns a Flow with the list of all categories.
      */
     fun getAll(): Flow<List<Category>>
 
     /**
-     * Insere uma nova categoria no banco de dados.
+     * Inserts a new category into the database.
      */
     suspend fun insert(category: Category)
 

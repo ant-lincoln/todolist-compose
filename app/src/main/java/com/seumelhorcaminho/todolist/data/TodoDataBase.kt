@@ -4,13 +4,16 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 
 @Database(
-    entities = [TodoEntity::class],
-    version = 1,
+    entities = [TodoEntity::class, CategoryEntity::class],
+    version = 2,
 )
+@TypeConverters(CheckboxTypeConverter::class)
 abstract class TodoDatabase : RoomDatabase(){
     abstract val todoDao: TodoDao
+    abstract val categoryDao: CategoryDao
 }
 
 object TodoDatabaseProvider {
@@ -24,7 +27,9 @@ object TodoDatabaseProvider {
                 context.applicationContext,
                 TodoDatabase::class.java,
                 "todo-app"
-            ).build()
+            )
+                .fallbackToDestructiveMigration()
+                .build()
             INSTANCE = instance
             instance
         }

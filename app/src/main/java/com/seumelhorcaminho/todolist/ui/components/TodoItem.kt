@@ -1,140 +1,121 @@
 package com.seumelhorcaminho.todolist.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.unit.sp
+import com.seumelhorcaminho.todolist.R
+import com.seumelhorcaminho.todolist.domain.Priority
 import com.seumelhorcaminho.todolist.domain.Todo
-import com.seumelhorcaminho.todolist.domain.todo1
-import com.seumelhorcaminho.todolist.domain.todo2
-import com.seumelhorcaminho.todolist.ui.theme.TodoListTheme
 
 @Composable
 fun TodoItem(
     todo: Todo,
-    onCompleteChange: (Boolean) -> Unit = {},
-    onItemClick: () -> Unit = {},
-    onDeleteClick: () -> Unit = {},
+    onCompleteChange: (Boolean) -> Unit,
+    onItemClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val showDialog = remember { mutableStateOf(false) }
 
-    // Funções para confirmar ou cancelar a exclusão
-    fun onDeleteConfirmed() {
-        onDeleteClick()
-        showDialog.value = false
-    }
-
-    fun onDeleteCanceled() {
-        showDialog.value = false
-    }
-
-    // Layout principal do item de todo
-    Surface(
-        onClick = onItemClick,
-        modifier = modifier.padding(vertical = 4.dp),
-        shape = MaterialTheme.shapes.medium,
-        shadowElevation = 2.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        tonalElevation = 1.dp,
+    Row(
+        modifier = modifier
+            .clickable(onClick = onItemClick)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        CircularCheckbox(
+            checked = todo.isCompleted,
+            onCheckedChange = onCompleteChange,
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center
         ) {
-            CircularCheckbox(
-                checked = todo.isCompleted,
-                onCheckedChange = onCompleteChange
+            Text(
+                text = todo.title,
+                style = MaterialTheme.typography.bodyLarge,
+                textDecoration = if (todo.isCompleted) TextDecoration.LineThrough else null,
+                color = if (todo.isCompleted) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
             )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp)
+            Spacer(modifier = Modifier.padding(2.dp))
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
             ) {
-                Text(
-                    text = todo.title,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        textDecoration = if (todo.isCompleted) TextDecoration.LineThrough else TextDecoration.None
-                    ),
-                    color = if (todo.isCompleted)
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    else
-                        MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = todo.description.let {
-                        if (it.isNullOrBlank()) "\uD83C\uDF43" else it
-                    },
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        textDecoration = if (todo.isCompleted) TextDecoration.LineThrough else TextDecoration.None
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            IconButton(onClick = { showDialog.value = true }) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Excluir tarefa",
-                    tint = MaterialTheme.colorScheme.error
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = todo.category.emoji, fontSize = 12.sp)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = todo.category.name,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
             }
         }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .clip(CircleShape)
+                .background(
+                    when (todo.priority) {
+                        Priority.BAIXA -> colorResource(R.color.green)
+                        Priority.MÉDIA -> colorResource(R.color.yellow)
+                        Priority.ALTA -> colorResource(R.color.red)
+                    }
+                )
+        )
+
     }
 
     if (showDialog.value) {
         AlertDialog(
             onDismissRequest = { showDialog.value = false },
-            title = { Text(text = "Confirmar exclusão") },
-            text = { Text("Você tem certeza que deseja excluir esta tarefa?") },
+            title = { Text("Confirmar Exclusão") },
+            text = { Text("Tem certeza que deseja excluir esta tarefa?") },
             confirmButton = {
-                Button(onClick = { onDeleteConfirmed() }) {
-                    Text("Confirmar")
-                }
+                Button(onClick = {
+                    onDeleteClick(); showDialog.value = false
+                }) { Text("Excluir") }
             },
-            dismissButton = {
-                Button(onClick = { onDeleteCanceled() }) {
-                    Text("Cancelar")
-                }
-            },
-            properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
+            dismissButton = { Button(onClick = { showDialog.value = false }) { Text("Cancelar") } }
         )
     }
 }
@@ -145,19 +126,16 @@ fun CircularCheckbox(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val backgroundColor = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
-    val borderColor = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    val backgroundColor = if (checked) MaterialTheme.colorScheme.primary else Color.Transparent
+    val borderColor =
+        if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
 
     Box(
         modifier = modifier
             .size(24.dp)
             .clip(CircleShape)
             .background(backgroundColor)
-            .border(
-                width = 2.dp,
-                color = borderColor,
-                shape = CircleShape
-            )
+            .border(2.dp, borderColor, CircleShape)
             .clickable { onCheckedChange(!checked) },
         contentAlignment = Alignment.Center
     ) {
@@ -168,29 +146,6 @@ fun CircularCheckbox(
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(16.dp)
             )
-        }
-    }
-}
-
-
-@Preview
-@Composable
-private fun TodoItemModernPreview() {
-    TodoListTheme {
-        Column {
-            TodoItem(todo = todo1)
-            TodoItem(todo = todo2)
-        }
-    }
-}
-
-@Preview
-@Composable
-private fun TodoItemCompletedPreview() {
-    TodoListTheme {
-        Column {
-            TodoItem(todo = todo1.copy(isCompleted = true))
-            TodoItem(todo = todo2.copy(isCompleted = true))
         }
     }
 }

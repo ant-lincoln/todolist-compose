@@ -57,6 +57,7 @@ fun AppDrawerContent(
 
     val categoryItems = listOf(
         DrawerItem(null, "📚", "Estudos", { onItemSelected("Estudos") }, true),
+        DrawerItem(null, "💼", "Trabalho", { onItemSelected("Trabalho") }, true),
         DrawerItem(null, "🛍️", "Compras", { onItemSelected("Compras") }, true),
         DrawerItem(null, "🩺", "Saúde", { onItemSelected("Saúde") }, true),
         DrawerItem(null, "🏅", "Treino", { onItemSelected("Treino") }, true),
@@ -106,7 +107,7 @@ fun AppDrawerContent(
                 },
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
-                    .padding(top= 8.dp, bottom = 8.dp),
+                    .padding(top = 8.dp, bottom = 8.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.DarkGray,
                     contentColor = Color.White

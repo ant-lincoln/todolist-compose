@@ -1,23 +1,20 @@
 package com.seumelhorcaminho.todolist.domain
 
+enum class Priority { BAIXA, MÉDIA, ALTA }
+
 data class Todo(
     val id: Long,
     val title: String,
     val description: String?,
     val isCompleted: Boolean,
+    val priority: Priority,
+    val category: Category,
+    val checklist: List<ChecklistItem>,
 )
 
-//Fake objects
-val todo1 = Todo(
-    id = 1,
-    title = "Todo 1",
-    description = "Description 1",
-    isCompleted = false,
+data class Category(
+    val id: Long,
+    val name: String,
+    val emoji: String,
 )
 
-val todo2 = Todo(
-    id = 2,
-    title = "Todo 2",
-    description = "Description 2",
-    isCompleted = false,
-)
