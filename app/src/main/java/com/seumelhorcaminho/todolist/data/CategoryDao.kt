@@ -1,6 +1,7 @@
 package com.seumelhorcaminho.todolist.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -13,4 +14,8 @@ interface CategoryDao {
 
     @Query("SELECT * FROM categories ORDER BY name ASC")
     fun getAll(): Flow<List<CategoryEntity>>
+
+    @Delete
+    suspend fun delete(category: CategoryEntity)
+
 }

@@ -28,4 +28,13 @@ class CategoryRepositoryImpl(
         )
         dao.insert(entity)
     }
+
+    override suspend fun delete(category: Category) {
+        val entity = CategoryEntity(
+            id = category.id,
+            name = category.name,
+            emoji = category.emoji
+        )
+        dao.delete(entity)
+    }
 }
